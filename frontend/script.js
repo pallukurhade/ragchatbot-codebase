@@ -5,7 +5,7 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+    newChatButton = document.getElementById('newChatButton');
+
     setupEventListeners();
     createNewSession();
     loadCourseStats();
@@ -28,8 +29,20 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+    // New Chat button
+    newChatButton.addEventListener('click', async () => {
+        const previousSessionId = currentSessionId;
+        await createNewSession();
+        if (previousSessionId) {
+            try {
+                await fetch(`${API_URL}/session/${previousSessionId}`, { method: 'DELETE' });
+            } catch (e) {
+                console.warn('Could not delete session on backend:', e);
+            }
+        }
+    });
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -122,10 +135,29 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     let html = `<div class="message-content">${displayContent}</div>`;
     
     if (sources && sources.length > 0) {
+        const seen = new Set();
+        const pills = sources
+            .filter(s => {
+                const key = (s.label ?? s);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .map(s => {
+                const label = escapeHtml(s.label ?? s);
+                return s.url
+                    ? `<a class="source-pill" href="${s.url}" target="_blank" rel="noopener noreferrer">
+                           <svg class="source-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                               <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7M8 1h3m0 0v3m0-3L5 7"/>
+                           </svg>
+                           ${label}
+                       </a>`
+                    : `<span class="source-pill source-pill--no-link">${label}</span>`;
+            }).join('');
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-list">${pills}</div>
             </details>
         `;
     }

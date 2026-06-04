@@ -245,6 +245,47 @@ header h1 {
     color: var(--text-secondary);
 }
 
+.sources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.5rem 0 0.25rem 0;
+}
+
+.source-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    line-height: 1.4;
+}
+
+a.source-pill:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.07);
+    transform: translateX(2px);
+}
+
+.source-pill--no-link {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.source-icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
 /* Markdown formatting styles */
 .message-content h1,
 .message-content h2,
@@ -489,6 +530,40 @@ header h1 {
 details[open] .stats-header::before,
 details[open] .suggested-header::before {
     transform: rotate(90deg);
+}
+
+/* New Chat Button */
+.new-chat-btn {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem 0;
+    border: none;
+    background: none;
+    list-style: none;
+    outline: none;
+    transition: color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    width: 100%;
+    display: block;
+}
+
+.new-chat-btn::before {
+    content: '+';
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.new-chat-btn:focus {
+    color: var(--primary-color);
+}
+
+.new-chat-btn:hover {
+    color: var(--primary-color);
 }
 
 /* Course Stats in Sidebar */
