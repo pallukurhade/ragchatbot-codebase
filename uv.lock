@@ -1677,6 +1677,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "black" },
+    { name = "httpx" },
     { name = "pytest" },
 ]
 
@@ -1695,6 +1696,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=24.0.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
     { name = "pytest", specifier = ">=9.0.3" },
 ]
 
