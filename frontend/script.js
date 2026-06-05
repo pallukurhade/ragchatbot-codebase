@@ -5,7 +5,15 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton, themeToggle;
+
+// Apply saved theme before first paint to avoid flash
+(function () {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+})();
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,14 +24,30 @@ document.addEventListener('DOMContentLoaded', () => {
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
     newChatButton = document.getElementById('newChatButton');
+    themeToggle = document.getElementById('themeToggle');
 
     setupEventListeners();
     createNewSession();
     loadCourseStats();
 });
 
+// Theme toggle
+function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const next = isDark ? 'light' : 'dark';
+    if (next === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+    localStorage.setItem('theme', next);
+}
+
 // Event Listeners
 function setupEventListeners() {
+    // Theme toggle
+    themeToggle.addEventListener('click', toggleTheme);
+
     // Chat functionality
     sendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => {
