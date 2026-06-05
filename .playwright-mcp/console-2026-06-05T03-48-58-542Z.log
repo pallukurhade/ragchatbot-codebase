@@ -1,0 +1,2 @@
+[      80ms] [LOG] Loading course stats... @ http://localhost:8001/script.js?v=13:213
+[      91ms] [LOG] Course data received: {total_courses: 4, course_titles: Array(4)} @ http://localhost:8001/script.js?v=13:218
