@@ -9,6 +9,7 @@ only appear when all components are wired together:
   - Sources leaking between queries
   - Pydantic serialisation problems in the response shape
 """
+
 import os
 import pytest
 from unittest.mock import MagicMock, patch
@@ -17,6 +18,7 @@ CHROMA_PATH = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _text_block(text: str):
     b = MagicMock()
@@ -54,6 +56,7 @@ class _FakeConfig:
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="module")
 def rag(request):
     """RAGSystem wired to real ChromaDB, Anthropic client mocked."""
@@ -62,11 +65,13 @@ def rag(request):
 
     with patch("ai_generator.anthropic.Anthropic"):
         from rag_system import RAGSystem
+
         system = RAGSystem(_FakeConfig())
     return system
 
 
 # ── helpers on the fixture ────────────────────────────────────────────────────
+
 
 def _prime(rag, *side_effects):
     """Reset call history and set side_effect on the mocked client."""
@@ -86,6 +91,7 @@ def _prime_direct(rag, text: str):
 
 # ── tests ─────────────────────────────────────────────────────────────────────
 
+
 class TestDirectResponse:
 
     def test_direct_answer_returned_unchanged(self, rag):
@@ -104,9 +110,10 @@ class TestContentQueryWithRealSearch:
         """
         _prime(
             rag,
-            _response("tool_use", [
-                _tool_use_block("tid_1", "search_course_content", {"query": "MCP server"})
-            ]),
+            _response(
+                "tool_use",
+                [_tool_use_block("tid_1", "search_course_content", {"query": "MCP server"})],
+            ),
             _response("end_turn", [_text_block("MCP is a protocol for AI tools.")]),
         )
         answer, sources = rag.query("What is MCP?")
@@ -117,9 +124,10 @@ class TestContentQueryWithRealSearch:
         """Sources returned from a tool-use query must be a list of dicts with label key."""
         _prime(
             rag,
-            _response("tool_use", [
-                _tool_use_block("tid_1", "search_course_content", {"query": "MCP architecture"})
-            ]),
+            _response(
+                "tool_use",
+                [_tool_use_block("tid_1", "search_course_content", {"query": "MCP architecture"})],
+            ),
             _response("end_turn", [_text_block("Answer about MCP.")]),
         )
         _, sources = rag.query("Describe MCP architecture")
@@ -130,9 +138,10 @@ class TestContentQueryWithRealSearch:
         """A query that returns no search results must return a string, not raise."""
         _prime(
             rag,
-            _response("tool_use", [
-                _tool_use_block("tid_1", "search_course_content", {"query": "xyzzy unknown"})
-            ]),
+            _response(
+                "tool_use",
+                [_tool_use_block("tid_1", "search_course_content", {"query": "xyzzy unknown"})],
+            ),
             _response("end_turn", [_text_block("I found no relevant content.")]),
         )
         try:
@@ -154,9 +163,10 @@ class TestMessageStructurePassedToApi:
         """
         _prime(
             rag,
-            _response("tool_use", [
-                _tool_use_block("tid_1", "search_course_content", {"query": "test topic"})
-            ]),
+            _response(
+                "tool_use",
+                [_tool_use_block("tid_1", "search_course_content", {"query": "test topic"})],
+            ),
             _response("end_turn", [_text_block("Answer")]),
         )
         rag.query("test topic query")
@@ -177,9 +187,9 @@ class TestMessageStructurePassedToApi:
         """
         _prime(
             rag,
-            _response("tool_use", [
-                _tool_use_block("tid_1", "search_course_content", {"query": "test"})
-            ]),
+            _response(
+                "tool_use", [_tool_use_block("tid_1", "search_course_content", {"query": "test"})]
+            ),
             _response("end_turn", [_text_block("ok")]),
         )
         rag.query("test query")
@@ -200,9 +210,9 @@ class TestSourcesIsolation:
         # Query 1: tool use → populates sources
         _prime(
             rag,
-            _response("tool_use", [
-                _tool_use_block("tid_1", "search_course_content", {"query": "MCP"})
-            ]),
+            _response(
+                "tool_use", [_tool_use_block("tid_1", "search_course_content", {"query": "MCP"})]
+            ),
             _response("end_turn", [_text_block("MCP answer")]),
         )
         rag.query("What is MCP?")
@@ -210,6 +220,6 @@ class TestSourcesIsolation:
         # Query 2: direct answer → sources must be empty
         _prime_direct(rag, "Hello!")
         _, sources_2 = rag.query("Say hello")
-        assert sources_2 == [], (
-            f"Sources leaked from previous query into a direct-answer query: {sources_2}"
-        )
+        assert (
+            sources_2 == []
+        ), f"Sources leaked from previous query into a direct-answer query: {sources_2}"

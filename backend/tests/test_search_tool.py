@@ -5,6 +5,7 @@ Unit tests use a mocked VectorStore so they run without ChromaDB.
 Integration tests (class TestCourseSearchToolIntegration) hit the
 real chroma_db that the running server uses.
 """
+
 import os
 import pytest
 from unittest.mock import MagicMock
@@ -12,8 +13,8 @@ from unittest.mock import MagicMock
 from search_tools import CourseSearchTool
 from vector_store import SearchResults
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _store_with_results(docs, metas, lesson_url=None):
     store = MagicMock()
@@ -27,6 +28,7 @@ def _store_with_results(docs, metas, lesson_url=None):
 
 
 # ── unit tests ────────────────────────────────────────────────────────────────
+
 
 class TestExecuteReturnsFormattedText:
 
@@ -97,17 +99,13 @@ class TestExecuteFiltersAreForwarded:
         store = MagicMock()
         store.search.return_value = SearchResults(documents=[], metadata=[], distances=[])
         CourseSearchTool(store).execute(query="content", lesson_number=3)
-        store.search.assert_called_once_with(
-            query="content", course_name=None, lesson_number=3
-        )
+        store.search.assert_called_once_with(query="content", course_name=None, lesson_number=3)
 
     def test_both_filters_passed_together(self):
         store = MagicMock()
         store.search.return_value = SearchResults(documents=[], metadata=[], distances=[])
         CourseSearchTool(store).execute(query="q", course_name="MCP", lesson_number=2)
-        store.search.assert_called_once_with(
-            query="q", course_name="MCP", lesson_number=2
-        )
+        store.search.assert_called_once_with(query="q", course_name="MCP", lesson_number=2)
 
 
 class TestLastSources:
@@ -152,6 +150,7 @@ def real_search_tool():
     if not os.path.exists(CHROMA_PATH):
         pytest.skip("chroma_db not found – skipping integration tests")
     from vector_store import VectorStore
+
     store = VectorStore(
         chroma_path=CHROMA_PATH,
         embedding_model="all-MiniLM-L6-v2",

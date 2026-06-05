@@ -7,13 +7,14 @@ The critical test is test_second_api_call_includes_tools_parameter:
   builds final_params WITHOUT `tools`, which causes the API to return a 400
   Bad Request — propagating as an uncaught exception → HTTP 500 → "query failed".
 """
+
 import pytest
 from unittest.mock import MagicMock, patch
 
 from ai_generator import AIGenerator
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _text_block(text: str):
     b = MagicMock()
@@ -51,6 +52,7 @@ def gen():
 
 # ── direct-text response (no tool use) ───────────────────────────────────────
 
+
 class TestDirectTextResponse:
 
     def test_returns_text_block_content(self, gen):
@@ -71,14 +73,15 @@ class TestDirectTextResponse:
 
 # ── tool-use call flow ────────────────────────────────────────────────────────
 
+
 class TestToolUseFlow:
 
     def _two_call_setup(self, gen, tool_input=None):
         if tool_input is None:
             tool_input = {"query": "python basics"}
-        first = _response("tool_use", [
-            _tool_use_block("tid_1", "search_course_content", tool_input)
-        ])
+        first = _response(
+            "tool_use", [_tool_use_block("tid_1", "search_course_content", tool_input)]
+        )
         second = _response("end_turn", [_text_block("Python is a language.")])
         gen.client.messages.create.side_effect = [first, second]
         tm = MagicMock()
@@ -106,9 +109,7 @@ class TestToolUseFlow:
         gen.generate_response(query="What is in lesson 1?", tools=FAKE_TOOLS, tool_manager=tm)
         kwargs = gen.client.messages.create.call_args_list[1][1]
         messages = kwargs["messages"]
-        assert len(messages) == 3, (
-            f"Expected 3 messages but got {len(messages)}: {messages}"
-        )
+        assert len(messages) == 3, f"Expected 3 messages but got {len(messages)}: {messages}"
 
     def test_second_call_last_message_is_tool_result(self, gen):
         tm = self._two_call_setup(gen, {"query": "lesson content"})
@@ -166,19 +167,20 @@ class TestToolUseFlow:
 
 # ── sequential tool calls (two rounds) ───────────────────────────────────────
 
+
 class TestSequentialToolCalls:
 
     def _three_call_setup(self, gen, tool1_input=None, tool2_input=None):
         """round1=search, round2=outline, final=text — two distinct tool calls."""
-        first  = _response("tool_use", [
-            _tool_use_block("t1", "search_course_content",
-                            tool1_input or {"query": "MCP"})
-        ])
-        second = _response("tool_use", [
-            _tool_use_block("t2", "get_course_outline",
-                            tool2_input or {"course_name": "MCP"})
-        ])
-        third  = _response("end_turn", [_text_block("Final synthesized answer.")])
+        first = _response(
+            "tool_use",
+            [_tool_use_block("t1", "search_course_content", tool1_input or {"query": "MCP"})],
+        )
+        second = _response(
+            "tool_use",
+            [_tool_use_block("t2", "get_course_outline", tool2_input or {"course_name": "MCP"})],
+        )
+        third = _response("end_turn", [_text_block("Final synthesized answer.")])
         gen.client.messages.create.side_effect = [first, second, third]
         tm = MagicMock()
         tm.execute_tool.side_effect = ["Search results", "Course outline"]
@@ -203,9 +205,7 @@ class TestSequentialToolCalls:
         gen.generate_response(query="test", tools=FAKE_TOOLS, tool_manager=tm)
         third_call_kwargs = gen.client.messages.create.call_args_list[2][1]
         messages = third_call_kwargs["messages"]
-        assert len(messages) == 5, (
-            f"Expected 5 messages in third call but got {len(messages)}"
-        )
+        assert len(messages) == 5, f"Expected 5 messages in third call but got {len(messages)}"
 
     def test_third_api_call_includes_tools(self, gen):
         tm = self._three_call_setup(gen)
@@ -215,7 +215,9 @@ class TestSequentialToolCalls:
 
     def test_stops_after_first_round_if_text_returned(self, gen):
         """If round 1's follow-up returns text, no second tool round runs."""
-        first  = _response("tool_use", [_tool_use_block("t1", "search_course_content", {"query": "x"})])
+        first = _response(
+            "tool_use", [_tool_use_block("t1", "search_course_content", {"query": "x"})]
+        )
         second = _response("end_turn", [_text_block("One-round answer.")])
         gen.client.messages.create.side_effect = [first, second]
         tm = MagicMock()
@@ -228,8 +230,12 @@ class TestSequentialToolCalls:
 
     def test_round_2_tool_failure_falls_back_gracefully(self, gen):
         """If the second round's tool call raises, the fallback fires without re-raising."""
-        first    = _response("tool_use", [_tool_use_block("t1", "search_course_content", {"query": "q"})])
-        second   = _response("tool_use", [_tool_use_block("t2", "get_course_outline", {"course_name": "X"})])
+        first = _response(
+            "tool_use", [_tool_use_block("t1", "search_course_content", {"query": "q"})]
+        )
+        second = _response(
+            "tool_use", [_tool_use_block("t2", "get_course_outline", {"course_name": "X"})]
+        )
         fallback = _response("end_turn", [_text_block("Fallback after failure.")])
         gen.client.messages.create.side_effect = [first, second, fallback]
 
@@ -244,12 +250,13 @@ class TestSequentialToolCalls:
 
 # ── fallback path ─────────────────────────────────────────────────────────────
 
+
 class TestFallbackPath:
 
     def test_three_calls_made_when_final_response_has_no_text(self, gen):
-        first = _response("tool_use", [
-            _tool_use_block("tid_1", "search_course_content", {"query": "test"})
-        ])
+        first = _response(
+            "tool_use", [_tool_use_block("tid_1", "search_course_content", {"query": "test"})]
+        )
         no_text = _response("end_turn", [])
         fallback = _response("end_turn", [_text_block("Fallback answer")])
         gen.client.messages.create.side_effect = [first, no_text, fallback]
@@ -262,9 +269,9 @@ class TestFallbackPath:
         assert result == "Fallback answer"
 
     def test_returns_empty_string_when_all_three_calls_have_no_text(self, gen):
-        first = _response("tool_use", [
-            _tool_use_block("tid_1", "search_course_content", {"query": "test"})
-        ])
+        first = _response(
+            "tool_use", [_tool_use_block("tid_1", "search_course_content", {"query": "test"})]
+        )
         empty = _response("end_turn", [])
         gen.client.messages.create.side_effect = [first, empty, empty]
         tm = MagicMock()
@@ -275,6 +282,7 @@ class TestFallbackPath:
 
 
 # ── exception propagation ─────────────────────────────────────────────────────
+
 
 class TestExceptionPropagation:
 
@@ -291,9 +299,9 @@ class TestExceptionPropagation:
           → app.py except block → HTTP 500 → frontend "query failed".
         This test documents that propagation so the fix is clear.
         """
-        first = _response("tool_use", [
-            _tool_use_block("tid_1", "search_course_content", {"query": "test"})
-        ])
+        first = _response(
+            "tool_use", [_tool_use_block("tid_1", "search_course_content", {"query": "test"})]
+        )
         gen.client.messages.create.side_effect = [
             first,
             RuntimeError("400 Bad Request: tools must be provided"),
